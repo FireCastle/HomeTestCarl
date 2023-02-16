@@ -16,6 +16,9 @@ class GAME extends PIXI.Container{
         this.addChild(this.uiLayer);
 
         this.score =0;
+        
+        this.fruitDisposal = [];
+        this.splatDisposal = [];
     }
 
     update(ms){
@@ -48,7 +51,6 @@ class GAME extends PIXI.Container{
             }
         }
 
-        let _fruitDisposal = [];
         this.fruits.forEach(fruit => {   
             if(fruit.wasSliced)  
             {
@@ -65,12 +67,31 @@ class GAME extends PIXI.Container{
 
         });
 
-        while(_fruitDisposal.length >0)
+        while(this.fruitDisposal.length >0)
         {
-            let _fruit = _fruitDisposal.pop();
+            let _fruit = this.fruitDisposal.pop();
             _fruit.dispose();
 
         }
+
+
+        this.splatter.forEach(splat => {
+            splat.update(ms);
+            
+            if(splat.alpha <= 0)
+                this.splatDisposal.push(splat);
+            
+        });
+
+        while(this.splatDisposal.length >0)
+        {
+            let _splat = this.splatDisposal.pop();
+            this.splatter.splice( this.splatter.indexOf(_splat), 1);
+
+            _splat.dispose();
+
+        }
+
 
         if(this.flash.alpha >0)
         {
@@ -81,6 +102,7 @@ class GAME extends PIXI.Container{
     gameStart(){
         this.time = GAME_SETTINGS.TIME_LIMIT;
         this.fruits = [];
+        this.splatter = [];
 
         this.spawnTimer = 0;
         this.spawnWaveSize = GAME_SETTINGS.BASE_WAVE_COUNT;
@@ -119,7 +141,6 @@ class GAME extends PIXI.Container{
 
         let _fruit;
         let _fruitX = GAME_SETTINGS.GAME_WIDTH * Math.random();
-        // let fruitY = GAME_SETTINGS.GAME_HEIGHT * Math.random();
         let _fruitY= GAME_SETTINGS.GAME_HEIGHT + (GAME_SETTINGS.FRUIT_Y_SPAWN_MAX_OFFSET * Math.random());
         if(fruitPool.length > 0)
         {
@@ -135,10 +156,19 @@ class GAME extends PIXI.Container{
     }
 
     spawnSplat(x,y,path){
-        console.log(path);
 
-        let _splat;
-        this.splatLayer.add(_splat);
+        let _splat; 
+        if(splatPool.length > 0)
+        {
+            _splat = splatPool.pop();
+            _splat.recycle(x,y,path);
+        }
+        else
+            _splat = new SPLAT(x,y,path);
+
+
+        this.splatter.push(_splat);
+        this.splatLayer.addChild(_splat);
 
     }
 }
@@ -211,8 +241,8 @@ To Do:
 
 Optional:
 - Retry
-- Splatter effect
-- Vanishing Disposal
+        - Splatter effect
+        - Vanishing Disposal
         - Fruit Rotation
 - Proper Loader
 - Drag Input and Collision Detection

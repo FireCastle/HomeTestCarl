@@ -5,7 +5,6 @@ class FRUIT extends PIXI.Container{
         super(x,y);
         this.body = new PIXI.Container();
         this.addChild(this.body);
-        this.interactive = true;
         this.state =  FRUIT_STATE.NONE;
 
         this.recycle(x,y);
@@ -56,12 +55,14 @@ class FRUIT extends PIXI.Container{
         this.isLaunched = false;
         this.velY = 0;
 
+        this.removeChildren();
         fruitPool.push(this);
     }
 
     launch(){
         this.velY = GAME_SETTINGS.FRUIT_LAUNCH_SPEED;
         this.isLaunched = true;
+        this.interactive = true;
         this.on('pointerdown',this.slice.bind(this));
         
     }
@@ -71,6 +72,10 @@ class FRUIT extends PIXI.Container{
         
         this.display.visible = false;
         this.displaySLeft.visible = this.displaySRight.visible = true;
+
+        
+        this.removeAllListeners();
+        this.interactive = false;
 
         this.state = FRUIT_STATE.SLICED;
         sfx.play();
