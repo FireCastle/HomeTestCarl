@@ -1,0 +1,51 @@
+const GAME_SETTINGS = {
+    GAME_WIDTH: 500,
+    GAME_HEIGHT: 888,
+
+    GRAVITY:0.0009807, 
+    TIME_LIMIT: 60000,  
+    SCORE_INCREMENT: 5,
+
+    FLASH_ALPHA: 0.75,
+    FLASH_DECAY_RATE: 0.005, // 0.75 over 125ms
+
+    ACTIVE_FRUIT_LIMIT: 99999,
+
+    FRUIT_LAUNCH_SPEED: -1.2,
+    BASE_SPAWN_TIMER: 1000,   
+    SPAWN_TIMER_MIN: 500,
+    SPAWN_TIMER_MODIFIER: -100, 
+    FRUIT_Y_SPAWN_MAX_OFFSET: 600,
+    FRUIT_SLICED_X_SPEED: 0.12,
+    
+
+    FRUIT_ANGLE_SPEED:0.045,
+
+    BASE_WAVE_COUNT: 2,
+    WAVE_COUNT_MODIFIER: 0.35,
+    PROGRESSION_TIMER: 10000,
+
+}
+
+const APP_STATE = {
+    LOADING:0,
+    TITLE:1,
+    GAME:2,
+    END:3
+}
+
+const FRUIT_TYPE =[
+    "blue",
+    "green",
+    "orange",
+    "purple",
+    "red",
+    "yellow"
+]
+
+const FRUIT_STATE ={
+    NONE:0,
+    WHOLE:1,
+    SLICED:2,
+    INACTIVE:3
+}
