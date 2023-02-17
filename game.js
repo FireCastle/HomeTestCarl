@@ -7,7 +7,7 @@ class GAME extends PIXI.Container{
         this.fruitLayer = new PIXI.Container();
         this.uiLayer = new PIXI.Container();
         
-        this.flash = new PIXI.Graphics().beginFill(0xFFFFFF).drawRect(0,0, app.gameWidth, app.gameHeight);
+        this.flash = new PIXI.Graphics().beginFill(0xFFFFFF).drawRect(0,0, window.innerHeight, window.innerWidth);
         this.flash.alpha = GAME_SETTINGS.FLASH_ALPHA;
         
         this.bg = PIXI.Sprite.from('media/game_bg.jpg');
@@ -15,8 +15,9 @@ class GAME extends PIXI.Container{
       
 
         this.addChild(this.bg);
+        this.addChild(this.splatLayer)
         this.addChild(this.fruitLayer);
-        this.fruitLayer.addChild(this.splatLayer);
+        // this.fruitLayer.addChild(this.splatLayer);
         this.addChild(this.flash);
         this.addChild(this.uiLayer);
 
@@ -149,9 +150,10 @@ class GAME extends PIXI.Container{
             this.flash.alpha -= GAME_SETTINGS.FLASH_DECAY_RATE * ms;
         }
 
-        this.bg.width = this.flash.width = app.gameWidth;
-        this.bg.height = this.flash.height = app.gameHeight;
-    
+        // this.bg.width = this.flash.width = app.gameWidth;
+        // this.bg.height = this.flash.height = app.gameHeight;
+        this.bg.width = app.gameWidth;
+        this.bg.height = app.gameHeight;
     }
 
     showMenu(){

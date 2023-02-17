@@ -60,7 +60,7 @@ class FRUIT extends PIXI.Container{
     }
 
     launch(){
-        this.velY = -(app.gameHeight / (GAME_SETTINGS.FRUIT_LAUNCH_SPEED_MIN + (GAME_SETTINGS.FRUIT_LAUNCH_SPEED_BUFFER * Math.random())));
+        this.velY = (GAME_SETTINGS.FRUIT_LAUNCH_SPEED_MIN + (GAME_SETTINGS.FRUIT_LAUNCH_SPEED_BUFFER * Math.random())) * -1;
         this.velX = (app.gameWidth/3000) * Math.random();
         if(Math.random() < 0.5)
             this.velX *= -1;
