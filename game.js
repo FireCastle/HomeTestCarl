@@ -7,18 +7,49 @@ class GAME extends PIXI.Container{
         this.fruitLayer = new PIXI.Container();
         this.uiLayer = new PIXI.Container();
         
-        this.flash = new PIXI.Graphics().beginFill(0xFFFFFF).drawRect(0,0, GAME_SETTINGS.GAME_WIDTH, GAME_SETTINGS.GAME_HEIGHT);
+        this.flash = new PIXI.Graphics().beginFill(0xFFFFFF).drawRect(0,0, app.gameWidth, app.gameHeight);
         this.flash.alpha = GAME_SETTINGS.FLASH_ALPHA;
         
-        this.addChild(this.splatLayer);
+        this.bg = PIXI.Sprite.from('media/game_bg.jpg');
+
+      
+
+        this.addChild(this.bg);
         this.addChild(this.fruitLayer);
+        this.fruitLayer.addChild(this.splatLayer);
         this.addChild(this.flash);
         this.addChild(this.uiLayer);
 
-        this.score =0;
+        this.score = this.comboTimer =  this.comboChain = 0;      
         
         this.fruitDisposal = [];
         this.splatDisposal = [];
+
+        const style = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 50,
+            fontStyle: 'italic',
+            fontWeight: 'bold',
+            fill: ['#ffffff', '#00ff99'],
+            stroke: '#4a1850',
+            strokeThickness: 5,
+        });
+        
+        
+        this.scoreText = new PIXI.Text("0", style);
+        this.scoreText.x = 50;
+        this.scoreText.y = 50;
+        
+        this.uiLayer.addChild(this.scoreText);
+        
+    }
+
+    setLayers(){
+
+    }
+
+    setVisuals(){
+        
     }
 
     update(ms){
@@ -30,7 +61,6 @@ class GAME extends PIXI.Container{
             if(this.state != APP_STATE.END)
             {
                 this.gameOver();
-                this.state = APP_STATE.END
             }
 
         }
@@ -51,25 +81,46 @@ class GAME extends PIXI.Container{
             }
         }
 
+        if(this.comboTimer > 0)
+        {
+            this.comboTimer -= ms;
+
+            if(this.comboTimer <= 0)
+                this.comboTimer = this.comboChain = 0;
+        }
+
         this.fruits.forEach(fruit => {   
             if(fruit.wasSliced)  
             {
                 this.spawnSplat(fruit.x, fruit.y, fruit.splat);
 
                 this.flash.alpha = 0.75;        
-                this.score+= GAME_SETTINGS.SCORE_INCREMENT;
+                
+                if(this.comboChain >= GAME_SETTINGS.COMBO_CHAIN_MAX)
+                    this.comboChain--;
+
+                this.score+= GAME_SETTINGS.SCORE_INCREMENT * ++this.comboChain;
+
+                this.scoreText.text = this.score.toString().padStart(GAME_SETTINGS.SCORE_STRING_LENGTH,"0");
+
+                this.comboTimer = GAME_SETTINGS.COMBO_TIMER;
             }
 
-            fruit.update(ms);
+            if( !fruit.update(ms) )
+            {
+                //if fruit ready for disposal
+                    //add to disposal queue
+                console.log("fruit is no longer fruit");
 
-            //if fruit ready for disposal
-                //add to disposal queue
+            }
+
 
         });
 
         while(this.fruitDisposal.length >0)
         {
             let _fruit = this.fruitDisposal.pop();
+            this.fruits.splice( this.fruits.indexOf(_fruit), 1);
             _fruit.dispose();
 
         }
@@ -97,6 +148,16 @@ class GAME extends PIXI.Container{
         {
             this.flash.alpha -= GAME_SETTINGS.FLASH_DECAY_RATE * ms;
         }
+
+        this.bg.width = this.flash.width = app.gameWidth;
+        this.bg.height = this.flash.height = app.gameHeight;
+    
+    }
+
+    showMenu(){
+
+        this.state = APP_STATE.TITLE;   
+        this.gameStart();
     }
 
     gameStart(){
@@ -104,15 +165,21 @@ class GAME extends PIXI.Container{
         this.fruits = [];
         this.splatter = [];
 
-        this.spawnTimer = 0;
+        this.spawnTimer = this.comboTimer = this.comboChain = this.score = 0;
+
+        this.scoreText.text = this.score.toString().padStart(GAME_SETTINGS.SCORE_STRING_LENGTH,"0");
+
         this.spawnWaveSize = GAME_SETTINGS.BASE_WAVE_COUNT;
         this.spawnWave();
 
         this.progTimer = GAME_SETTINGS.PROGRESSION_TIMER;
+        
+        this.state = APP_STATE.GAME;   
     }
     
     gameOver(){
 
+        this.state = APP_STATE.END;   
     }
 
     levelProgress(){
@@ -140,8 +207,13 @@ class GAME extends PIXI.Container{
             return;
 
         let _fruit;
-        let _fruitX = GAME_SETTINGS.GAME_WIDTH * Math.random();
-        let _fruitY= GAME_SETTINGS.GAME_HEIGHT + (GAME_SETTINGS.FRUIT_Y_SPAWN_MAX_OFFSET * Math.random());
+        let _bufferSize = app.gameWidth * GAME_SETTINGS.FRUIT_X_SPAWN_BUFFER;
+        let _spawnAreaWidth = app.gameWidth - (_bufferSize *2);  //Remove Buffer from both sides.
+        let _fruitX = (_spawnAreaWidth* Math.random()) + _bufferSize;       //Apply left buffer after getting random point
+
+
+
+        let _fruitY= app.gameHeight + (GAME_SETTINGS.FRUIT_Y_SPAWN_MAX_OFFSET * Math.random());
         if(fruitPool.length > 0)
         {
             _fruit = fruitPool.pop();
@@ -174,10 +246,11 @@ class GAME extends PIXI.Container{
 }
 
 
-let app = new PIXI.Application({ width: GAME_SETTINGS.GAME_WIDTH, height: GAME_SETTINGS.GAME_HEIGHT });
+let app = new PIXI.Application({ width: window.innerWidth, height: window.innerHeight });
 document.body.appendChild(app.view);
+app.resizeTo = window;
 
-let assetsList = [
+const assetsList = [
 'media/board.png',
 'media/game_bg.jpg',
 'media/game_fruit_blue.png',
@@ -211,8 +284,7 @@ assetsList.forEach(element => {
 
 const sfx = new Audio('media/sword-unsheathing.mp3');
 
-app.bg = PIXI.Sprite.from('media/game_bg.jpg');
-app.stage.addChild(app.bg);
+
 
 
 let elapsed = 0.0;
@@ -222,6 +294,9 @@ app.ticker.add((delta) => {
     if(_ms >= 250)
         return;
 
+    app.gameWidth = window.innerWidth;
+    app.gameHeight = window.innerHeight;
+
     if(app && app.game)
         app.game.update(_ms);
 });
@@ -229,7 +304,7 @@ app.ticker.add((delta) => {
 
 app.game = new GAME();
 app.stage.addChild(app.game);
-app.game.gameStart();
+app.game.showMenu();
 
 /*
 To Do:
@@ -237,7 +312,7 @@ To Do:
 - Game States and Flow ( Title, In-Game, End Screen)
         - Fruit Slicing
         - Fruit Replacement
-- Scoring System and UI
+        - Scoring System and UI
 
 Optional:
 - Retry
@@ -247,14 +322,11 @@ Optional:
 - Proper Loader
 - Drag Input and Collision Detection
 - Object Pool with Disposal
-- Fix audio bug, or implement a soundmanager???
-- X Spawn limiter
+        - Fix audio bug, or implement a soundmanager???
+- Fix Responsiveness
 
 
-Font Options:
-https://fonts.google.com/specimen/Julee
-https://fonts.google.com/specimen/Kaushan+Script
-https://fonts.google.com/specimen/Press+Start+2P
+
 
 */
 
