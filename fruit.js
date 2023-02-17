@@ -25,7 +25,7 @@ class FRUIT extends PIXI.Container{
         
         this.isLaunched = false;
         this.wasSliced = false;
-        this.velY = 0;
+        this.velX = this.velY = 0;
 
 
         this.display = PIXI.Sprite.from('media/'+this.mainPiece);
@@ -53,14 +53,17 @@ class FRUIT extends PIXI.Container{
     dispose(){
 
         this.isLaunched = false;
-        this.velY = 0;
+        this.velX = this.velY = 0;
 
         this.removeChildren();
         fruitPool.push(this);
     }
 
     launch(){
-        this.velY = GAME_SETTINGS.FRUIT_LAUNCH_SPEED;
+        this.velY = -(app.gameHeight / (GAME_SETTINGS.FRUIT_LAUNCH_SPEED_MIN + (GAME_SETTINGS.FRUIT_LAUNCH_SPEED_BUFFER * Math.random())));
+        this.velX = (app.gameWidth/3000) * Math.random();
+        if(Math.random() < 0.5)
+            this.velX *= -1;
         this.isLaunched = true;
         this.interactive = true;
         this.on('pointerdown',this.slice.bind(this));
@@ -78,11 +81,16 @@ class FRUIT extends PIXI.Container{
         this.interactive = false;
 
         this.state = FRUIT_STATE.SLICED;
-        sfx.play();
+       
+        
+        let _sfx = new Audio('media/sword-unsheathing.mp3');   
+        _sfx.play();
+        // sfx.play();
     }
 
     update(ms){
         this.y += (this.velY * ms);
+        this.x += (this.velX * ms);
         this.velY += GAME_SETTINGS.GRAVITY * ms;
 
     
@@ -96,5 +104,11 @@ class FRUIT extends PIXI.Container{
         }
         
         this.wasSliced = false;
+        
+        let  _toDispose = false;
+        //disposal check
+        //return false if disposing
+
+        return true;
     }
 }
