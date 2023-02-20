@@ -57,6 +57,18 @@ class GAME extends PIXI.Container{
         });                
         this.scoreText = new PIXI.Text("0", _scoreStyle);
 
+        let _timerStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 100,
+            fontWeight: 'bold',
+            fill: ['#ffffff'],
+            stroke: '#000000',
+            strokeThickness: 5,
+        });                
+        this.timerText = new PIXI.Text("0", _timerStyle);
+        this.timerText.anchor.set(0.5);
+
+
         this.endPopup = new PIXI.Container();
         let _endPopupContainer = PIXI.Sprite.from('media/board.png');        
         _endPopupContainer.anchor.set(0.5);
@@ -93,6 +105,7 @@ class GAME extends PIXI.Container{
 
         this.uiLayer.addChild(this.tutorial);
         this.uiLayer.addChild(this.scoreText);
+        this.uiLayer.addChild(this.timerText);
         this.uiLayer.addChild(this.endPopup);
 
         this.uiLayer.addChild(this.playButton);
@@ -109,9 +122,6 @@ class GAME extends PIXI.Container{
     }
 
     update(ms){
-        if(this.time && this.time>0)
-            this.time -= ms;
-
 
         if(this.state == APP_STATE.END_TRANSITION)
         {
@@ -128,37 +138,49 @@ class GAME extends PIXI.Container{
             this.endScoreText.text = Math.floor(this.endScore).toString().padStart(GAME_SETTINGS.SCORE_STRING_LENGTH,"0");
         }
 
-        if(this.time <= 0 )
+        if(this.state == APP_STATE.GAME)
         {
-            if(this.state != APP_STATE.END)
-            {
-                this.gameOver();
-            }
+            
+            if(this.time && this.time>0)
+                this.time -= ms;
 
-        }
-        else{
-            if(this.progTimer)
-            {
-                this.progTimer -= ms;
-                if(this.progTimer <= 0)
-                    this.levelProgress();
-            }
+            let _timeString = Math.round(this.time / 1000).toString().padStart(2,"0");
+            
+            this.timerText.x = app.gameWidth * 0.5;
+            this.timerText.text = _timeString;
 
-            if(this.spawnTimer)
+            if(this.time <= 0 )
             {
-                this.spawnTimer -= ms;
-                if(this.spawnTimer <= 0)
-                    this.spawnWave();
+                if(this.state != APP_STATE.END)
+                {
+                    this.gameOver();
+                }
 
             }
-        }
+            else{
+                if(this.progTimer)
+                {
+                    this.progTimer -= ms;
+                    if(this.progTimer <= 0)
+                        this.levelProgress();
+                }
 
-        if(this.comboTimer > 0)
-        {
-            this.comboTimer -= ms;
+                if(this.spawnTimer)
+                {
+                    this.spawnTimer -= ms;
+                    if(this.spawnTimer <= 0)
+                        this.spawnWave();
 
-            if(this.comboTimer <= 0)
-                this.comboTimer = this.comboChain = 0;
+                }
+            }
+
+            if(this.comboTimer > 0)
+            {
+                this.comboTimer -= ms;
+
+                if(this.comboTimer <= 0)
+                    this.comboTimer = this.comboChain = 0;
+            }
         }
 
         if(this.fruits)
@@ -181,10 +203,7 @@ class GAME extends PIXI.Container{
 
                 if( !fruit.update(ms) )
                 {
-                    //if fruit ready for disposal
-                        //add to disposal queue
-                    console.log("fruit is no longer fruit");
-
+                    this.fruitDisposal.push(fruit);
                 }
             });
 
@@ -232,7 +251,9 @@ class GAME extends PIXI.Container{
 
         this.scoreText.x = 50;
         this.scoreText.y = 50;
-        this.scoreText.visible = (this.state == APP_STATE.GAME);  
+        this.timerText.x = window.innerWidth * 0.5;
+        this.timerText.y = 100;
+        this.scoreText.visible = this.timerText.visible = (this.state == APP_STATE.GAME);  
         
         this.homeButton.x = this.endPopup.x = window.innerWidth * 0.5;
         this.endPopup.y = window.innerHeight * 0.5;
@@ -433,7 +454,7 @@ To Do:
         - Fruit Slicing
         - Fruit Replacement
         - Scoring System and UI
-- Timer UI
+        - Timer UI
 
 Optional:
 - Retry

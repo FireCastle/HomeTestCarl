@@ -26,9 +26,6 @@ const GAME_SETTINGS = {
     FRUIT_ANGLE_SPEED:0.045,
 
     SPLAT_DECAY_RATE:0.00015,
-
-
-
 }
 
 const APP_STATE = {
