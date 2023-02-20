@@ -16,8 +16,9 @@ class FRUIT extends PIXI.Container{
         this.x = x;
         this.y = y;
         
-
-        this.type = FRUIT_TYPE[Math.floor(Math.random() * FRUIT_TYPE.length)];
+        let _rand = Math.floor(Math.random() * FRUIT_TYPE.length);
+        this.type = FRUIT_TYPE[_rand];
+        this.value = (_rand+1) * GAME_SETTINGS.SCORE_INCREMENT;
         this.mainPiece ="game_fruit_"+this.type+".png";
         this.sliceLeft = "game_fruit_"+this.type+"_l.png";
         this.sliceRight = "game_fruit_"+this.type+"_r.png";
@@ -71,7 +72,15 @@ class FRUIT extends PIXI.Container{
     }
     
     slice(){
-        this.wasSliced = true;
+        if(this.state != FRUIT_STATE.WHOLE)
+            return;
+
+        if(this.value > 0)
+        {
+            this.wasSliced = true;
+            let _sfx = new Audio('media/sword-unsheathing.mp3');   
+            _sfx.play();
+        }
         
         this.display.visible = false;
         this.displaySLeft.visible = this.displaySRight.visible = true;
@@ -82,10 +91,12 @@ class FRUIT extends PIXI.Container{
 
         this.state = FRUIT_STATE.SLICED;
        
-        
-        let _sfx = new Audio('media/sword-unsheathing.mp3');   
-        _sfx.play();
-        // sfx.play();
+    }
+
+    forceSlice(){
+        this.value = 0;
+        this.slice();
+
     }
 
     update(ms){

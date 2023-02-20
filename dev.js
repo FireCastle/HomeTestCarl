@@ -6,8 +6,8 @@ const GAME_SETTINGS = {
     BASE_WAVE_COUNT: 3,
     WAVE_COUNT_MODIFIER: 0.35,
     PROGRESSION_TIMER: 10000,
-    COMBO_TIMER: 500,
-    COMBO_CHAIN_MAX: 6,
+    COMBO_TIMER: 0,
+    COMBO_CHAIN_MAX: 1,
 
     FLASH_ALPHA: 0.75,
     FLASH_DECAY_RATE: 0.006, // 0.75 over 125ms
@@ -35,16 +35,17 @@ const APP_STATE = {
     LOADING:0,
     TITLE:1,
     GAME:2,
-    END:3
+    END_TRANSITION:3,
+    END:4
 }
 
 const FRUIT_TYPE =[
-    "blue",
     "green",
-    "orange",
+    "yellow",
     "purple",
+    "orange",
     "red",
-    "yellow"
+    "blue"
 ]
 
 const FRUIT_STATE ={
