@@ -340,7 +340,6 @@ class GAME extends PIXI.Container{
             this.spawnFruit();
 
         this.spawnTimer = GAME_SETTINGS.BASE_SPAWN_TIMER;
-        console.log("Spawning Wave");
         
     }
 
@@ -446,33 +445,4 @@ app.ticker.add((delta) => {
 
 app.game = new GAME();
 app.stage.addChild(app.game);
-
-/*
-To Do:
-        - Temp Loader
-        - Game States and Flow ( Title, In-Game, End Screen)
-        - Fruit Slicing
-        - Fruit Replacement
-        - Scoring System and UI
-        - Timer UI
-
-Optional:
-- Retry
-        - Splatter effect
-        - Vanishing Disposal
-        - Fruit Rotation
-- Proper Loader
-- Drag Input and Collision Detection
-- Object Pool with Disposal
-        - Fix audio bug, or implement a soundmanager???
-- Fix Responsiveness
-- Fruit Disposal
-
-
-
-
-
-*/
-
-
 
