@@ -3,30 +3,50 @@ class GAME extends PIXI.Container{
         super(0,0);
         this.state = APP_STATE.LOADING;    
 
-        this.splatLayer = new PIXI.Container();
-        this.fruitLayer = new PIXI.Container();
-        this.uiLayer = new PIXI.Container();
+        this.setup();
         
-        this.flash = new PIXI.Graphics().beginFill(0xFFFFFF).drawRect(0,0, window.innerHeight, window.innerWidth);
-        this.flash.alpha = GAME_SETTINGS.FLASH_ALPHA;
-        
-        this.bg = PIXI.Sprite.from('media/game_bg.jpg');
-
-      
-
-        this.addChild(this.bg);
-        this.addChild(this.splatLayer)
-        this.addChild(this.fruitLayer);
-        // this.fruitLayer.addChild(this.splatLayer);
-        this.addChild(this.flash);
-        this.addChild(this.uiLayer);
-
-        this.score = this.comboTimer =  this.comboChain = 0;      
-        
+        this.score = this.comboTimer =  this.comboChain = this.endScore = 0;     
         this.fruitDisposal = [];
         this.splatDisposal = [];
 
-        const style = new PIXI.TextStyle({
+        this.showMenu();
+        
+    }
+
+    setup(){
+        if(this.state != APP_STATE.LOADING)  
+            return;
+
+        this.splatLayer = new PIXI.Container();
+        this.fruitLayer = new PIXI.Container();
+        this.uiLayer = new PIXI.Container();        
+        
+        this.bg = PIXI.Sprite.from('media/game_bg.jpg');    
+        
+        this.flash = new PIXI.Graphics().beginFill(0xFFFFFF).drawRect(0,0, window.innerHeight, window.innerWidth);
+        this.flash.alpha = GAME_SETTINGS.FLASH_ALPHA;
+
+        this.tutorial = new PIXI.Container();
+        let _tutorialContainer = PIXI.Sprite.from('media/board.png');        
+        _tutorialContainer.anchor.set(0.5);
+        let _tutorialStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 24,
+            fontWeight: 'bold',
+            fill: "#983601",
+            align: "center",
+        });        
+        let _tutorialText = new PIXI.Text("CLICK ON A FRUIT TO SLICE.\n\nTRY TO SLICE ALL THE FRUITS\nBEFORE THE TIME RUNS OUT!", _tutorialStyle);  
+        _tutorialText.anchor.set(0.5);
+        this.tutorial.addChild(_tutorialContainer); 
+        this.tutorial.addChild(_tutorialText); 
+
+        this.playButton = PIXI.Sprite.from('media/play.png'); 
+        this.playButton.anchor.set(0.5);
+        this.playButton.on('pointerdown',this.playButtonPressed.bind(this));
+    
+
+        let _scoreStyle = new PIXI.TextStyle({
             fontFamily: 'Arial',
             fontSize: 50,
             fontStyle: 'italic',
@@ -34,28 +54,79 @@ class GAME extends PIXI.Container{
             fill: ['#ffffff', '#00ff99'],
             stroke: '#4a1850',
             strokeThickness: 5,
-        });
+        });                
+        this.scoreText = new PIXI.Text("0", _scoreStyle);
+
+        this.endPopup = new PIXI.Container();
+        let _endPopupContainer = PIXI.Sprite.from('media/board.png');        
+        _endPopupContainer.anchor.set(0.5);
+
+        let _endHeaderStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 50,
+            fontWeight: 'bold',
+            fill: "#983601",
+            align: "center",
+        });    
+        let _endHeaderText = new PIXI.Text("YOU GOT:", _endHeaderStyle);  
+        _endHeaderText.anchor.set(0.5);
+        _endHeaderText.y = -75;
+
+        let _endScoreStyle = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 90,
+            fontWeight: 'bold',
+            fill: "#983601",
+            align: "center",
+        });               
+        this.endScoreText = new PIXI.Text("0", _endScoreStyle);
+        this.endScoreText.anchor.set(0.5);
+        this.endScoreText.y = 25;
+
+        this.endPopup.addChild(_endPopupContainer); 
+        this.endPopup.addChild(_endHeaderText);
+        this.endPopup.addChild(this.endScoreText);
         
-        
-        this.scoreText = new PIXI.Text("0", style);
-        this.scoreText.x = 50;
-        this.scoreText.y = 50;
-        
+        this.homeButton = PIXI.Sprite.from('media/restart.png');
+        this.homeButton.anchor.set(0.5);
+        this.homeButton.on('pointerdown',this.homeButtonPressed.bind(this));
+
+        this.uiLayer.addChild(this.tutorial);
         this.uiLayer.addChild(this.scoreText);
+        this.uiLayer.addChild(this.endPopup);
+
+        this.uiLayer.addChild(this.playButton);
+        this.uiLayer.addChild(this.homeButton);
         
-    }
+        this.tutorial.visible = this.scoreText.visible = this.endPopup.visible = false;     
 
-    setLayers(){
+        this.addChild(this.bg);
+        this.addChild(this.splatLayer)
+        this.addChild(this.fruitLayer);
+        this.addChild(this.flash);
+        this.addChild(this.uiLayer);
 
-    }
-
-    setVisuals(){
-        
     }
 
     update(ms){
         if(this.time && this.time>0)
             this.time -= ms;
+
+
+        if(this.state == APP_STATE.END_TRANSITION)
+        {
+            if(this.endScore < this.score)
+                this.endScore += ms * this.endScoreTickRate;
+
+            if(this.endScore >= this.score)
+                {
+                    this.endScore = this.score;
+                    this.state = APP_STATE.END;
+                    this.uiControl();
+                }
+
+            this.endScoreText.text = Math.floor(this.endScore).toString().padStart(GAME_SETTINGS.SCORE_STRING_LENGTH,"0");
+        }
 
         if(this.time <= 0 )
         {
@@ -90,50 +161,49 @@ class GAME extends PIXI.Container{
                 this.comboTimer = this.comboChain = 0;
         }
 
-        this.fruits.forEach(fruit => {   
-            if(fruit.wasSliced)  
-            {
-                this.spawnSplat(fruit.x, fruit.y, fruit.splat);
+        if(this.fruits)
+            this.fruits.forEach(fruit => {   
+                if(fruit.wasSliced)  
+                {
+                    this.spawnSplat(fruit.x, fruit.y, fruit.splat);
 
-                this.flash.alpha = 0.75;        
-                
-                if(this.comboChain >= GAME_SETTINGS.COMBO_CHAIN_MAX)
-                    this.comboChain--;
+                    this.flash.alpha = 0.75;        
+                    
+                    if(this.comboChain >= GAME_SETTINGS.COMBO_CHAIN_MAX)
+                        this.comboChain--;
 
-                this.score+= GAME_SETTINGS.SCORE_INCREMENT * ++this.comboChain;
+                    this.score+= fruit.value * ++this.comboChain;
 
-                this.scoreText.text = this.score.toString().padStart(GAME_SETTINGS.SCORE_STRING_LENGTH,"0");
+                    this.scoreText.text = this.score.toString().padStart(GAME_SETTINGS.SCORE_STRING_LENGTH,"0");
 
-                this.comboTimer = GAME_SETTINGS.COMBO_TIMER;
-            }
+                    this.comboTimer = GAME_SETTINGS.COMBO_TIMER;
+                }
 
-            if( !fruit.update(ms) )
-            {
-                //if fruit ready for disposal
-                    //add to disposal queue
-                console.log("fruit is no longer fruit");
+                if( !fruit.update(ms) )
+                {
+                    //if fruit ready for disposal
+                        //add to disposal queue
+                    console.log("fruit is no longer fruit");
 
-            }
-
-
-        });
+                }
+            });
 
         while(this.fruitDisposal.length >0)
         {
             let _fruit = this.fruitDisposal.pop();
             this.fruits.splice( this.fruits.indexOf(_fruit), 1);
             _fruit.dispose();
-
         }
 
 
-        this.splatter.forEach(splat => {
-            splat.update(ms);
-            
-            if(splat.alpha <= 0)
-                this.splatDisposal.push(splat);
-            
-        });
+        if(this.splatter)
+            this.splatter.forEach(splat => {
+                splat.update(ms);
+                
+                if(splat.alpha <= 0)
+                    this.splatDisposal.push(splat);
+                
+            });
 
         while(this.splatDisposal.length >0)
         {
@@ -141,7 +211,6 @@ class GAME extends PIXI.Container{
             this.splatter.splice( this.splatter.indexOf(_splat), 1);
 
             _splat.dispose();
-
         }
 
 
@@ -150,24 +219,55 @@ class GAME extends PIXI.Container{
             this.flash.alpha -= GAME_SETTINGS.FLASH_DECAY_RATE * ms;
         }
 
-        // this.bg.width = this.flash.width = app.gameWidth;
-        // this.bg.height = this.flash.height = app.gameHeight;
-        this.bg.width = app.gameWidth;
-        this.bg.height = app.gameHeight;
+        this.bg.width = this.flash.width = app.gameWidth;
+        this.bg.height = this.flash.height = app.gameHeight;
+    }
+
+    uiControl(){
+        
+        this.playButton.x = this.tutorial.x = window.innerWidth * 0.5;
+        this.tutorial.y = 300;
+        this.playButton.y = 700;
+        this.playButton.visible = this.tutorial.visible = this.playButton.interactive =  (this.state == APP_STATE.TITLE);
+
+        this.scoreText.x = 50;
+        this.scoreText.y = 50;
+        this.scoreText.visible = (this.state == APP_STATE.GAME);  
+        
+        this.homeButton.x = this.endPopup.x = window.innerWidth * 0.5;
+        this.endPopup.y = window.innerHeight * 0.5;
+        this.homeButton.y = (window.innerHeight * 0.5) + 300;
+        this.endPopup.visible = ((this.state == APP_STATE.END) || (this.state == APP_STATE.END_TRANSITION));
+        this.homeButton.visible = this.homeButton.interactive =  (this.state == APP_STATE.END);
+
     }
 
     showMenu(){
 
         this.state = APP_STATE.TITLE;   
-        this.gameStart();
+        this.uiControl();
+
     }
 
-    gameStart(){
+    playButtonPressed(){
+        if( this.state != APP_STATE.TITLE)
+            return;
+
+
+        this.gameStart();
+        this.uiControl();
+    }
+
+    gameStart(){        
+        if( this.state != APP_STATE.TITLE)
+            return;
+
         this.time = GAME_SETTINGS.TIME_LIMIT;
         this.fruits = [];
         this.splatter = [];
 
-        this.spawnTimer = this.comboTimer = this.comboChain = this.score = 0;
+        this.spawnTimer = this.comboTimer = this.comboChain = this.score = this.endScore = 0;
+        this.endScoreTickRate = 1;
 
         this.scoreText.text = this.score.toString().padStart(GAME_SETTINGS.SCORE_STRING_LENGTH,"0");
 
@@ -181,7 +281,26 @@ class GAME extends PIXI.Container{
     
     gameOver(){
 
-        this.state = APP_STATE.END;   
+        if(this.state != APP_STATE.GAME)
+            return;
+
+            
+        if(this.fruits)
+        this.fruits.forEach(fruit => {   
+            fruit.forceSlice();
+        });
+        
+        this.endScoreTickRate = this.score / 1500;
+
+        this.state = APP_STATE.END_TRANSITION;
+        this.uiControl(); 
+    }
+
+    homeButtonPressed(){
+        if(this.state != APP_STATE.END)
+            return;
+
+        this.showMenu();
     }
 
     levelProgress(){
@@ -306,15 +425,15 @@ app.ticker.add((delta) => {
 
 app.game = new GAME();
 app.stage.addChild(app.game);
-app.game.showMenu();
 
 /*
 To Do:
         - Temp Loader
-- Game States and Flow ( Title, In-Game, End Screen)
+        - Game States and Flow ( Title, In-Game, End Screen)
         - Fruit Slicing
         - Fruit Replacement
         - Scoring System and UI
+- Timer UI
 
 Optional:
 - Retry
@@ -326,6 +445,8 @@ Optional:
 - Object Pool with Disposal
         - Fix audio bug, or implement a soundmanager???
 - Fix Responsiveness
+- Fruit Disposal
+
 
 
 
